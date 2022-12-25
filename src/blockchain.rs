@@ -36,8 +36,8 @@ pub struct Chain {
 }
 
 impl Chain {
-    pub fn new(miner_addr: String, difficulty: u32) -> Chain {
-        let mut chain = Chain {
+    pub fn new(miner_addr: String, difficulty: u32) -> Self {
+        let mut chain = Self {
             chain: Vec::new(),
             curr_trans: Vec::new(),
             difficulty,
@@ -47,6 +47,7 @@ impl Chain {
         chain.generate_new_block();
         return chain;
     }
+
     pub fn new_transaction(&mut self, sender: String, receiver: String, amount: f32) -> bool {
         self.curr_trans.push(Transaction {
             sender,
@@ -61,20 +62,20 @@ impl Chain {
             Some(block) => block,
             None => return String::from_utf8(vec![48; 64]).unwrap(),
         };
-        Chain::hash(&block.header)
+        Self::hash(&block.header)
     }
 
-    fn update_difficulty(&mut self, difficulty: u32) -> bool {
+    pub fn update_difficulty(&mut self, difficulty: u32) -> bool {
         self.difficulty = difficulty;
         true
     }
 
-    fn update_reward(&mut self, reward: f32) -> bool {
+    pub fn update_reward(&mut self, reward: f32) -> bool {
         self.reward = reward;
         true
     }
 
-    fn generate_new_block(&mut self) -> bool {
+    pub fn generate_new_block(&mut self) -> bool {
         let header = BlockHeader {
             timestamp: Utc::now().timestamp_millis(),
             nonce: 0,
@@ -98,8 +99,8 @@ impl Chain {
         block.transactions.push(reward_trans);
         block.transactions.append(&mut self.curr_trans);
         block.count = block.transactions.len() as u32;
-        block.header.merkle = Chain::get_merkle(block.transactions.clone());
-        Chain::proof_of_work(&mut block.header);
+        block.header.merkle = Self::get_merkle(block.transactions.clone());
+        Self::proof_of_work(&mut block.header);
 
         println!("{:?}", &block);
         self.chain.push(block);
@@ -109,7 +110,7 @@ impl Chain {
     fn get_merkle(curr_trans: Vec<Transaction>) -> String {
         let mut merkle = Vec::new();
         for t in &curr_trans {
-            let hash = Chain::hash(t);
+            let hash = Self::hash(t);
             merkle.push(hash)
         }
 
@@ -123,7 +124,7 @@ impl Chain {
             let mut h2 = merkle.remove(0);
             h1.push_str(&mut h2);
             println!("{} {}", h1, h2);
-            let nh = Chain::hash(&h1);
+            let nh = Self::hash(&h1);
             println!("{}", nh);
             merkle.push(nh)
         }
@@ -133,8 +134,9 @@ impl Chain {
 
     fn proof_of_work(header: &mut BlockHeader) {
         loop {
-            let hash = Chain::hash(header);
+            let hash = Self::hash(header);
             let slice = &hash[..header.difficulty as usize];
+            println!("{} {}", slice, hash);
             match slice.parse::<u32>() {
                 Ok(value) => {
                     if value != 0 {
@@ -152,14 +154,14 @@ impl Chain {
         }
     }
 
-    pub fn hash<T: serde::Serialize>(item: &T) -> String {
+    fn hash<T: serde::Serialize>(item: &T) -> String {
         let input = serde_json::to_string(&item).unwrap();
         let mut hasher = Sha256::new();
         hasher.update(input.as_bytes());
         let res = hasher.finalize();
         let vec_res = res.to_vec();
 
-        Chain::hex_to_string(vec_res.as_slice())
+        Self::hex_to_string(vec_res.as_slice())
     }
 
     fn hex_to_string(vec_res: &[u8]) -> String {
