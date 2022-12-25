@@ -1,4 +1,4 @@
-# Rust_block_chain
+# BlockChain_Implementation
 
 # A simple rust CLI block chain project
 
